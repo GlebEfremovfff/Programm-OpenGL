@@ -1,0 +1,198 @@
+//Код был написан с  помощью GLFW
+//Заданы координаты точек на плоскости и дерево.Необходимо сопоставить точки на плоскости вершинам дерева так, чтобы при расположении дерева на плоскости ребра не пересекались.
+//Во Флатландии n городов, расположенных в различных точках плоскости.Известно, что никакие три города не лежат на одной прямой.
+//Правительство решило построить в стране сеть сверхскоростных шоссе.Сеть шоссе должна быть такой, чтобы из любого города можно было проехать в любой другой по построенным шоссе.А в целях экономии средств было решено, что путь, соединяющий любые два города, должен быть единственным.Каждое шоссе представляет собой отрезок, соединяющий некоторую пару городов.
+//Завод, выполняющий этот госзаказ, подготовил проект сети шоссе.Проект представляет собой описание n - 1 шоссе.Каждое шоссе задается городами, которые оно соединяет.В целях секретности вместо названий городов в проекте были использованы коды – числа от 1 до n.
+//Однако когда дело дошло до реализации проекта, выяснилось, что документ, в котором было указано соответствие номеров городам, утерян.Поскольку проект приурочен к пятисотлетию культурной столицы Флатландии, переделывать проект полностью оказалось невозможно.Поэтому было решено установить некоторое новое соответствие номеров городам.
+//При попытке это сделать разработчики проекта столкнулись со следующей проблемой.В соответствии с техническими нормами строительства, недопустимо, чтобы шоссе пересекались вне городов.Поэтому не любое сопоставление номеров городам допустимо.После пары бессонных ночей главный инженер завода решил поручить спасение проекта вам.
+//Ваша задача – таким образом сопоставить числам от 1 до n города, чтобы после реализации проекта шоссе не пересекались вне городов, которые они соединяют.
+//Входные данные
+//В первой строке вводится целое число n – количество городов во Флатландии(2n1500).
+//Далее следует n описаний городов.Описание каждого города состоит из двух строк.Первая строка содержит название города – строку, состоящую из символов с ASCII - кодами от 33 до 127. Названия различных городов не совпадают.Длина названия города не превышает 60 символов.Вторая строка описания города содержит два целых числа x и y – координаты города.Координаты не превышают 104 по абсолютной величине.
+//Далее следуют n - 1 строк, которые описывают проект строительства сети шоссе в его текущем состоянии.Каждая строка содержит по два целых числа – номера городов, соединенных шоссе в проекте.Никакое шоссе в проекте не соединяет город сам с собой, никакие два города не соединены более, чем одним шоссе.
+//Выходные данные
+//Выведите  n строк, i - я из этих строк должна содержать название города, который следует сопоставить числу i в проекте.Если решений несколько, выведите любое.
+//Если решения не существует, выведите строку «No solution».
+//Примеры
+//входные данные
+//7
+//Moscow
+//2 2
+//St - Petersburg
+//0 4
+//Kirov
+//6 3
+//Saratov
+//5 0
+//Rybinsk
+//1 1
+//Petrozavodsk
+//2 6
+//Barnaul
+//10 - 1
+//1 2
+//2 4
+//3 5
+//4 3
+//4 7
+//3 6
+//выходные данные
+//St - Petersburg
+//Rybinsk
+//Kirov
+//Saratov
+//Moscow
+//Petrozavodsk
+//Barnaul
+
+#include <GLFW/glfw3.h> 
+#include<iostream>
+#include<vector>
+#include<algorithm>
+#include<cmath>
+#include<string>
+using namespace std;
+struct grd {
+    string nm;
+    int num;
+    double x, y;
+    grd(string n = "", double xx = 0, int nn = 0, double yy = 0) :nm(n), x(xx), num(nn), y(yy) {};
+    friend istream& operator>>(istream& in, grd& g) {
+        in >> g.nm >> g.x >> g.y;
+        return in;
+    }
+    bool operator<(const grd& other)const {
+        return num < other.num;
+    }
+};
+
+bool neperotr(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
+    double Ua, Ub, num_a, num_b, den;
+    den = (y4 - y3) * (x1 - x2) - (x4 - x3) * (y1 - y2);
+    if (den == 0) {
+        if ((x1 * y2 - x2 * y1) * (x4 - x3) - (x3 * y4 - x4 * y3) * (x2 - x1) == 0 && (x1 * y2 - x2 * y1) * (y4 - y3) - (x3 * y4 - x4 * y3) * (y2 - y1) == 0)
+            return false;
+        else return true;
+    }
+    else {
+        num_a = (x4 - x2) * (y4 - y3) - (x4 - x3) * (y4 - y2);
+        num_b = (x1 - x2) * (y4 - y2) - (x4 - x2) * (y1 - y2);
+        Ua = num_a / den;
+        Ub = num_b / den;
+        return (Ua >= 0 && Ua <= 1 && Ub >= 0 && Ub <= 1 ? false : true);
+    }
+}
+
+bool cmp(const pair<int, int>& i, const pair<int, int>& j) {
+    return i.first < j.first;
+}
+
+double n;
+vector<grd> v;
+vector<pair<int, int>> d;
+vector<vector<int>> p(1, vector<int>());
+
+void head() {
+    sort(d.begin(), d.end(), cmp);
+    for (int j = 0; j < n; j++) {
+        p[0].push_back(j + 1);
+    }
+    p.push_back(p[0]);
+    while (next_permutation(p[0].begin(), p[0].end())) {
+        p.push_back(p[0]);
+    }
+    bool f;
+    for (int i = 1; i < p.size(); i++) {
+        for (int j = 0; j < n; j++) {
+            v[j].num = p[i][j];
+        }
+        f = true;
+        for (int k = 0; k < d.size() - 1; k++) {
+            grd A, B, C, D;
+            for (int l = 0; l < n; l++) {
+                if (v[l].num == d[k].first) A = v[l];
+            }
+            for (int l = 0; l < n; l++) {
+                if (v[l].num == d[k].second) B = v[l];
+            }
+            for (int j = k + 1; j < d.size(); j++) {
+                for (int l = 0; l < n; l++) {
+                    if (v[l].num == d[j].first) C = v[l];
+                }
+                for (int l = 0; l < n; l++) {
+                    if (v[l].num == d[j].second) D = v[l];
+                }
+                if (A.nm != B.nm && A.nm != C.nm && A.nm != D.nm && B.nm != C.nm && B.nm != D.nm && C.nm != D.nm) {
+                    if (neperotr(A.x, A.y, B.x, B.y, C.x, C.y, D.x, D.y) == false) f = false;
+                }
+            }
+        }
+        if (f) break;
+    }
+    if (!f) cout << "No solurion" << endl;
+    else {
+        stable_sort(v.begin(), v.end());
+        for (int i = 0; i < n; i++) {
+            cout << v[i].nm << endl;
+        }
+    }
+}
+void input() {
+    cout << "Enter count of towns" << endl;
+    cin >> n;
+    cout << "Enter town's name and coordinates" << endl;
+    for (int i = 0; i < n; i++) {
+        grd t;
+        cin >> t;
+        v.push_back(t);
+    }
+    for (int i = 0; i < n - 1; i++) {
+        int a, b;
+        cin >> a >> b;
+        if (a > b) swap(a, b);
+        d.push_back(make_pair(a, b));
+    }
+    head();
+}
+
+int main(void) {
+    input();
+    GLFWwindow* window;
+    if (!glfwInit()) return -1;
+    window = glfwCreateWindow(640, 640, "City", NULL, NULL);
+    if (!window) {
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    glLoadIdentity();
+    glOrtho(-20, 20, -20, 20, -1, 1);
+    glViewport(0, 0, 640, 640);
+    while (!glfwWindowShouldClose(window)) {
+        glClear(GL_COLOR_BUFFER_BIT);
+        glEnable(GL_POINT_SMOOTH);
+        glPointSize(5);
+        for (int i = 0; i < d.size(); i++) {
+            grd fr, sd;
+            for (int j = 0; j < v.size(); j++) {
+                if (v[j].num == d[i].first) fr = v[j];
+                if (v[j].num == d[i].second)sd = v[j];
+            }
+            glBegin(GL_LINES);
+            glColor3f(0, 1, 0);
+            glVertex2f(fr.x, fr.y);
+            glVertex2f(sd.x, sd.y);
+            glEnd();
+            glBegin(GL_POINTS);
+            glColor3f(1, 0, 0);
+            glVertex2f(fr.x, fr.y);
+            glVertex2f(sd.x, sd.y);
+            glEnd();
+        }
+        glDisable(GL_POINT_SMOOTH);
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+    glfwTerminate();
+    return 0;
+}
