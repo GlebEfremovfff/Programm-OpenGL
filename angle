@@ -1,0 +1,156 @@
+#include <GLFW/glfw3.h> 
+#include<iostream>
+#include<vector>
+#include<algorithm>
+#include<cmath>
+#include<string>
+using namespace std;
+double yv1, yv2, ys, xb, yb, r, x2, y2, xup, yup, x3, y3, x4, y4, a1, b1, c1, a2, b2, c2, xp, yp, xp2, yp2;
+double a3, b3, c3, a4, b4, c4, x5, y5;
+void rotateot(double x1, double y1, double angle) {
+    double dx = x2; 
+    double dy = y2; 
+    xp = x1 + (dx - x1) * cos(angle * acos(-1) / 180) - (dy - y1) * sin(angle * acos(-1) / 180);
+    yp = y1 + (dx - x1) * sin(angle * acos(-1) / 180) + (dy - y1) * cos(angle * acos(-1) / 180); 
+}
+void rotateot1(double x1, double y1, double angle) {
+    double dx = x4;
+    double dy = y4;
+    xp2 = x1 + (dx - x1) * cos(angle * acos(-1) / 180) - (dy - y1) * sin(angle * acos(-1) / 180);
+    yp2 = y1 + (dx - x1) * sin(angle * acos(-1) / 180) + (dy - y1) * cos(angle * acos(-1) / 180);
+}
+double vm(double ax, double ay, double bx, double by) {
+    return ax * by - bx * ay;
+}
+bool per(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
+    double v1, v2, v3, v4;
+    v1 = vm(x4 - x3, y4 - y3, x1 - x3, y1 - y3);
+    v2 = vm(x4 - x3, y4 - y3, x2 - x3, y2 - y3);
+    v3 = vm(x2 - x1, y2 - y1, x3 - x1, y3 - y1);
+    v4 = vm(x2 - x1, y2 - y1, x4 - x1, y4 - y1);
+    if ((v1 * v2 < 0) && (v3 * v4 < 0)) return true;
+    else return false;
+}
+void urpr(double cx, double cy, double ex, double ey) {
+   a1 = ey - cy;
+   b1 = cx - ex;
+   c1 = -cx * (ey - cy) + cy * (ex - cx);
+}
+void urpr1(double cx, double cy, double ex, double ey) {
+    a3 = ey - cy;
+    b3 = cx - ex;
+    c3 = -cx * (ey - cy) + cy * (ex - cx);
+}
+void tpr(double a1, double b1, double c1, double a2, double b2, double c2) {
+    double d, dx, dy;
+   d = a1 * b2 - b1 * a2;
+   dx = -c1 * b2 + b1 * c2;
+   dy = -a1 * c2 + c1 * a2;
+   x3 = dx / d;
+   y3 = dy / d;
+}
+void tpr1(double a1, double b1, double c1, double a2, double b2, double c2) {
+    double d, dx, dy;
+    d = a1 * b2 - b1 * a2;
+    dx = -c1 * b2 + b1 * c2;
+    dy = -a1 * c2 + c1 * a2;
+    x5 = dx / d;
+    y5 = dy / d;
+}
+void head() {
+    bool f = false;
+    if (xb == 0 || yv2 - yv1 < 2 * r) {
+        cout << -1 << endl;
+    }
+    else {
+        x2 = xb;
+        y2 = yb + xb;
+        yv1 += r;
+        yv2 -= r;
+        ys -= r;
+        for (double i = 0.1; i < 90; i += 0.1) {
+            rotateot(xb, yb, i);
+            if (per(xb, yb, x2, y2, 0, ys, 40, ys)) {
+                urpr(xb, yb, xp, yp);
+                a2 = a1; b2 = b1; c2 = c1;
+                urpr(0, ys, 40, ys);
+                tpr(a1, b1, c1, a2, b2, c2);
+                y4 = y3;
+                x4 = -10;
+                rotateot1(x3, y3, 90-i);
+               /* if (per(x3, y3, xp2, yp2, 0, yv1, 0, yv2)) {*/
+                    urpr1(0.001, yv1, 0.002, yv2);
+                    a4 = a3; b4 = b3; c4 = c3;
+                    urpr1(x3, y3, xp2, yp2);
+                    tpr1(a3, b3, c3, a4, b4, c4);
+                    if (y5<yv2 && y5>yv1) {
+                        f = true;
+                        yv1 -= r;
+                        yv2 += r;
+                        ys += r;
+                        goto Finish;
+                    }
+               /* }*/               
+            }
+        }
+    }
+Finish:
+    if (f) cout << x3 << endl;
+    else cout << -1 << endl;
+}
+
+void input() {
+    cin >> yv1 >> yv2 >> ys >> xb >> yb >> r;
+    head();
+}
+
+int main(void) {
+    input();
+    GLFWwindow* window;
+    if (!glfwInit()) return -1;
+    window = glfwCreateWindow(640, 640, "Football", NULL, NULL);
+    if (!window) {
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    glLoadIdentity();
+    glOrtho(-40, 40, -40, 40, -1, 1);
+    glViewport(0, 0, 640, 640);
+    while (!glfwWindowShouldClose(window)) {
+        glClear(GL_COLOR_BUFFER_BIT);
+        glEnable(GL_POINT_SMOOTH);
+        glPointSize(2);
+        glBegin(GL_POINTS);
+        glColor3f(1, 0, 0);
+        glVertex2f(0, yv1);
+        glVertex2f(0, yv2);
+        glEnd();
+        glBegin(GL_LINES);
+        glColor3f(0, 0, 1);
+        glVertex2f(0, ys);
+        glVertex2f(40, ys);
+        glEnd();
+        glPointSize(5);
+        glBegin(GL_POINTS);
+        glColor3f(0, 1, 0);
+        glVertex2f(xb, yb);
+        glVertex2f(x3, y3);
+        glVertex2f(0, y5);
+        glEnd();
+        glDisable(GL_POINT_SMOOTH);
+        glEnable(GL_LINE_STIPPLE);
+        glBegin(GL_LINES);
+        glColor3f(1, 0, 0);
+        glVertex2f(xb, yb);
+        glVertex2f(x3, y3);
+        glVertex2f(x3, y3);
+        glVertex2f(0, y5);
+        glEnd();
+        glDisable(GL_LINE_STIPPLE);
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+    glfwTerminate();
+    return 0;
+}
