@@ -1,0 +1,138 @@
+#include <GLFW/glfw3.h>
+#include<iostream>
+#include<vector>
+#include<algorithm>
+#include<cmath>
+#include<string>
+using namespace std;
+
+struct pnt {
+    double x, y, z;
+    pnt(double xx = 0, double yy = 0, double zz = 0) :x(xx), y(yy), z(zz) {};
+    friend istream& operator>>(istream& in, pnt& p) {
+        in >> p.x >> p.y >> p.z;
+        return in;
+    }
+};
+
+double n;
+vector<pnt> v;
+double t1 = 0, t2 = 1, t3 = 2, t4 = 3;
+bool check(int i, int j, int k, int h, int l) {
+    double ax = v[i].x, ay = v[i].y, az = v[i].z, bx = v[j].x, by = v[j].y, bz = v[j].z, cx = v[k].x, cy = v[k].y, cz = v[k].z;
+    double dx = v[h].x, dy = v[h].y, dz = v[h].z, px = v[l].x, py = v[l].y, pz = v[l].z;
+    double det, b, c, d, cdx, cdy, cdz;
+    bool rez = false;
+    bx -= ax; by -= ay; bz -= az; cx -= ax; cy -= ay; cz -= az;
+    dx -= ax; dy -= ay; dz -= az; px -= ax; py -= ay; pz -= az;
+    cdx = cy * dz - cz * dy;
+    cdy = cz * dx - cx * dz;
+    cdz = cx * dy - cy * dx;
+    det = bx * cdx + by * cdy + bx * cdz;
+    if (det != 0) {
+        b = px * cdx + py * cdy + pz * cdz;
+        c = px * (dy * bz - dz * by) + py * (bz * cx - bx * cz) + pz * (dx * by - dy * bx);
+        d = px * (by * cz - bz * cy) + py * (bz * cx - bx * cz) + pz * (bx * cy - by * cx);
+        if (det > 0) rez = (b >= 0) && (c >= 0) && (d >= 0) && (b + c + d <= det);
+        else rez = (b <= 0) && (c <= 0) && (d <= 0) && (b + c + d >= det);
+    }
+    return rez;
+}
+void head() {
+    int cnt = 0;
+    int maxcnt = 0;
+    for (int i = 0; i < n - 3; i++) {
+        for (int j = i + 1; j < n - 2; j++) {
+            for (int k = j + 1; k < n - 1; k++) {
+                for (int h = k + 1; h < n; h++) {
+                    for (int l = 0; l < n; l++) {
+                        if (l != i && l != j && l != k && l != h) {
+                            if (check(i, j, k, h, l)) cnt++;
+                        }
+                    }
+                    if (cnt > maxcnt) {
+                        t1 = i; t2 = j; t3 = k; t4 = h;
+                        maxcnt = cnt;
+                    }
+                    cnt = 0;
+                }
+            }
+        }
+    }
+    cout << "Max count of ponits that could be inside is " << maxcnt << endl;
+}
+
+void input() {
+    cout << "Enter count of points" << endl;
+    cin >> n;
+    cout << "Enter coordinates of points" << endl;
+    for (int i = 0; i < n; i++) {
+        pnt t;
+        cin >> t;
+        v.push_back(t);
+    }
+    head();
+}
+
+int main(void) {
+    input();
+    GLFWwindow* window;
+    if (!glfwInit()) return -1;
+    window = glfwCreateWindow(640, 640, "tetr", NULL, NULL);
+    if (!window) {
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    glLoadIdentity();
+    glOrtho(-100, 100, -100, 100, -100, 100);
+    glViewport(0, 0, 640, 640);
+    while (!glfwWindowShouldClose(window)) {
+        glClear(GL_COLOR_BUFFER_BIT);
+        glRotatef(0.15, 1, 1, 0);
+        glBegin(GL_LINE_LOOP);
+        glColor3f(1, 1, 1);
+        glVertex3f(v[t1].x, v[t1].y, v[t1].z);
+        glVertex3f(v[t2].x, v[t2].y, v[t2].z);
+        glVertex3f(v[t3].x, v[t3].y, v[t3].z);
+        glEnd();
+        glBegin(GL_LINE_LOOP);
+        glColor3f(1, 1, 1);
+        glVertex3f(v[t1].x, v[t1].y, v[t1].z);
+        glVertex3f(v[t4].x, v[t4].y, v[t4].z);
+        glVertex3f(v[t2].x, v[t2].y, v[t2].z);
+        glEnd();
+        glBegin(GL_LINE_LOOP);
+        glColor3f(1, 1, 1);
+        glVertex3f(v[t1].x, v[t1].y, v[t1].z);
+        glVertex3f(v[t3].x, v[t3].y, v[t3].z);
+        glVertex3f(v[t4].x, v[t4].y, v[t4].z);
+        glEnd();
+        glBegin(GL_LINE_LOOP);
+        glColor3f(1, 1, 1);
+        glVertex3f(v[t2].x, v[t2].y, v[t2].z);
+        glVertex3f(v[t4].x, v[t4].y, v[t4].z);
+        glVertex3f(v[t3].x, v[t3].y, v[t3].z);
+        glEnd();
+        glEnable(GL_POINT_SMOOTH);
+        for (int i = 0; i < n; i++) {
+            if (i != t1 && i != t2 && i != t3 && i != t4) {
+                glPointSize(5);
+                glBegin(GL_POINTS);
+                glColor3f(0, 1, 0);
+                glVertex3f(v[i].x, v[i].y, v[i].z);
+                glEnd();
+            }
+        }
+        glDisable(GL_POINT_SMOOTH);
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+    glfwTerminate();
+    return 0;
+}
+//12 3 -50
+//-30 12 15
+//19 67 23
+//23 -12 71
+//-43 -23 40
